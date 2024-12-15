@@ -1,0 +1,88 @@
+skil alexa 
+script da skil 
+
+const Alexa = require('ask-sdk-core');
+const axios = require('axios');  // Adicionando o Axios para realizar requisições HTTP
+
+// Função para pegar dados aleatórios da API do Rick and Morty
+async function getRandomCharacter() {
+    try {
+        // Fazendo a requisição para a API do Rick and Morty
+        const response = await axios.get('https://rickandmortyapi.com/api/character');
+        const characters = response.data.results;
+
+        // Escolher um personagem aleatório
+        const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+
+        return `Eu tenho uma nova informação sobre o personagem ${randomCharacter.name}. Ele é de ${randomCharacter.origin.name}, e o status dele é ${randomCharacter.status}.`;
+    } catch (error) {
+        console.error(error);
+        return 'Desculpe, ocorreu um erro ao tentar obter as informações do Rick and Morty.';
+    }
+}
+
+const LaunchRequestHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Bem-vindo ao Rick and Morty! Você quer ouvir uma informação aleatória sobre os personagens?';
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+
+const GetNewFactIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNewFactIntent';
+    },
+    async handle(handlerInput) {
+        // Obtendo uma resposta aleatória da API
+        const speakOutput = await getRandomCharacter();
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput + ' Quer ouvir mais sobre outro personagem?')
+            .reprompt('Quer saber mais sobre outro personagem?')
+            .getResponse();
+    }
+};
+
+const HelpIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Você pode dizer "me conte um personagem" para ouvir uma curiosidade sobre os personagens de Rick and Morty.';
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+
+const CancelAndStopIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
+                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Até logo!';
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
+
+exports.handler = Alexa.SkillBuilders.custom()
+    .addRequestHandlers(
+        LaunchRequestHandler,
+        GetNewFactIntentHandler,
+        HelpIntentHandler,
+        CancelAndStopIntentHandler
+    )
+    .lambda();

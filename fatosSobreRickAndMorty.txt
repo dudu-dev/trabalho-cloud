@@ -1,0 +1,8 @@
+intents
+
+utterances
+
+me fale sobre um personagem de Rick and Morty
+fale sobre o Rick
+o Rick esta vivo
+qual é a especie do Rick

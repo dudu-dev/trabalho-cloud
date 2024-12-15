@@ -1,0 +1,11 @@
+schema
+dynamoDB
+
+tablename: RickAndMortyCharacters
+
+characterId
+name
+species
+status
+gender
+image

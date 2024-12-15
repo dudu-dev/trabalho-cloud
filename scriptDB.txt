@@ -1,0 +1,69 @@
+lambda com dynamodb
+Script Data Base
+
+const AWS = require('aws-sdk');
+const axios = require('axios');  // Para fazer requisições HTTP para a API do Rick and Morty
+const dynamodb = new AWS.DynamoDB.DocumentClient();
+
+exports.handler = async (event) => {
+    try {
+        // Recupera o characterId do parâmetro de consulta ou corpo da requisição
+        const characterId = event.pathParameters.characterId || event.queryStringParameters.characterId;
+        
+        if (!characterId) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    message: 'Character ID is required'
+                })
+            };
+        }
+
+        // Chamada à API do Rick and Morty para buscar dados do personagem com o ID fornecido
+        const response = await axios.get(`https://rickandmortyapi.com/api/character/${characterId}`);
+        const character = response.data;
+
+        // Verifica se o personagem foi encontrado na API
+        if (!character || !character.id) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({
+                    message: 'Character not found'
+                })
+            };
+        }
+
+        // Define os parâmetros para salvar os dados no DynamoDB
+        const params = {
+            TableName: 'RickAndMortyCharacters',  // Nome da tabela DynamoDB que irá armazenar os dados dos personagens
+            Item: {
+                characterId: character.id.toString(),  // ID do personagem
+                name: character.name,
+                species: character.species,
+                status: character.status,
+                gender: character.gender,
+                image: character.image,
+                createdAt: new Date().toISOString()
+            }
+        };
+
+        // Persiste os dados do personagem no DynamoDB
+        await dynamodb.put(params).promise();
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                message: 'Character saved successfully',
+                characterId: params.Item.characterId
+            })
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                message: 'Error saving character data',
+                error: error.message
+            })
+        };
+    }
+};
